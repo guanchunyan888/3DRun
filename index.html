@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D跑酷游戏</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+        
+        :root {
+            --primary-color: #ff5722;
+            --secondary-color: #ff9500;
+            --accent-color: #4caf50;
+            --dark-bg: rgba(0, 0, 0, 0.6);
+            --light-bg: rgba(255, 255, 255, 0.2);
+        }
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'ZCOOL KuaiLe', cursive, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+        }
+        
+        canvas { 
+            display: block; 
+        }
+        
+        #gameUI {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+        }
+        
+        .game-panel {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: var(--dark-bg);
+            padding: 12px 18px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
+        }
+        
+        #level {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 48px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+            padding: 30px 50px;
+            border-radius: 20px;
+            display: none;
+            text-align: center;
+            max-width: 80%;
+            animation: fadeIn 0.5s ease-out;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        
+        #gameOver p {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200') center/cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+        
+        #startScreen h1 {
+            font-size: 72px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 87, 34, 0.8);
+            animation: pulse 2s infinite, glowText 2s infinite alternate;
+            text-align: center;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color), #64b5f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: var(--primary-color);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes glowText {
+            from { text-shadow: 0 0 10px rgba(255, 87, 34, 0.5), 0 0 20px rgba(255, 87, 34, 0.3); }
+            to { text-shadow: 0 0 15px rgba(255, 87, 34, 0.8), 0 0 30px rgba(255, 87, 34, 0.5); }
+        }
+        
+        #startScreen p {
+            font-size: 24px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        
+        #controlsInfo {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 1s;
+        }
+        
+        #controlsInfo div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .keyIcon {
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 18px;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+        
+        .keyIcon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
+        }
+        
+        #startButton {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 28px;
+            font-family: 'ZCOOL KuaiLe', cursive, Arial, sans-serif;
+            cursor: pointer;
+            background: linear-gradient(145deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            border-radius: 50px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4), 0 8px 10px -5px rgba(255, 87, 34, 0.5);
+            transition: all 0.3s;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #startButton:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        #startButton:hover:before {
+            left: 100%;
+        }
+        
+        #startButton:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 87, 34, 0.6), 0 10px 15px -5px rgba(255, 87, 34, 0.7);
+        }
+        
+        #startButton:active {
+            transform: translateY(1px);
+        }
+        
+        #powerUps {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .powerUp {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            opacity: 0.5;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .powerUp.active {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 30px var(--accent-color);
+            animation: pulsePower 2s infinite;
+        }
+        
+        @keyframes pulsePower {
+            0% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 30px var(--accent-color); }
+            50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.9), 0 0 40px var(--accent-color); }
+            100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 30px var(--accent-color); }
+        }
+        
+        #pauseButton {
+            position: absolute;
+            top: 20px;
+            right: 80px;
+            background: var(--dark-bg);
+            border: none;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+            z-index: 100;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+        
+        #pauseButton:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: none;
+            justify-content: space-around;
+            padding: 0 20px;
+            pointer-events: auto;
+        }
+        
+        .mobileBtn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .mobileBtn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        #progressBar {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #progressFill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-color), #8bc34a);
+            transition: width 0.3s;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            #mobileControls {
+                display: flex;
+            }
+            
+            #controlsInfo {
+                display: none;
+            }
+            
+            #startScreen h1 {
+                font-size: 48px;
+            }
+            
+            #startScreen p {
+                font-size: 18px;
+                padding: 0 20px;
+            }
+            
+            .game-panel {
+                padding: 8px 12px;
+                font-size: 18px !important;
+            }
+            
+            #progressBar {
+                width: 80%;
+            }
+        }
+        
+        /* 添加手势控制提示的动画 */
+        #controlsHelp {
+            animation: fadeInOut 6s forwards;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        /* 使控制信息更紧凑 */
+        #controlsInfo {
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 15px 25px;
+        }
+        
+        #controlsInfo div {
+            margin: 8px 0;
+        }
+        
+        /* 增加移动端适配 */
+        @media (max-width: 768px) {
+            #controlsInfo {
+                max-height: 180px;
+                width: 80%;
+            }
+            
+            #controlsHelp {
+                bottom: 160px !important;
+                font-size: 14px !important;
+            }
+        }
+        
+        /* 添加ESC键暂停提示 */
+        #pauseTip {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 100;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameUI">
+        <div id="score" class="game-panel">分数: 0</div>
+        <div id="level" class="game-panel">关卡: 1</div>
+        <div id="progressBar"><div id="progressFill"></div></div>
+        <div id="pauseButton"><i class="fas fa-pause"></i></div>
+        <div id="powerUps">
+            <div id="doubleTap" class="powerUp"><i class="fas fa-shoe-prints"></i></div>
+            <div id="shield" class="powerUp"><i class="fas fa-shield-alt"></i></div>
+            <div id="magnet" class="powerUp"><i class="fas fa-magnet"></i></div>
+        </div>
+    </div>
+    
+    <div id="pauseTip">按ESC键暂停</div>
+    
+    <div id="gameOver">
+        游戏结束!
+        <p>按空格键或点击屏幕重新开始</p>
+        <div id="finalScore" style="font-size: 36px; margin-top: 10px; color: #ff9500;">得分: 0</div>
+    </div>
+    
+    <div id="startScreen">
+        <h1>3D彩虹跑酷</h1>
+        <p>在这个充满色彩的3D世界中奔跑、跳跃，收集金币，避开障碍物，看看你能走多远！</p>
+        
+        <div id="controlsInfo">
+            <div><span class="keyIcon">A</span> 或 <span class="keyIcon">←</span> <span>向左移动</span></div>
+            <div><span class="keyIcon">D</span> 或 <span class="keyIcon">→</span> <span>向右移动</span></div>
+            <div><span class="keyIcon">S</span> 或 <span class="keyIcon">↓</span> <span>滑行（可通过带有<span style="color:#00ff00">绿色标记</span>的障碍物）</span></div>
+            <div><span class="keyIcon">空格</span> <span>跳跃 (按两次可二段跳)</span></div>
+            <div><span class="keyIcon"><i class="fas fa-keyboard"></i></span> <span>ESC键暂停游戏</span></div>
+            <div><span class="keyIcon"><i class="fas fa-mouse"></i></span> <span>鼠标滑动控制</span></div>
+            <div><span class="keyIcon"><i class="fas fa-hand-point-up"></i></span> <span>向左/右滑动：左右移动</span></div>
+            <div><span class="keyIcon"><i class="fas fa-hand-point-up"></i></span> <span>向上滑动：跳跃</span></div>
+            <div><span class="keyIcon"><i class="fas fa-hand-point-up"></i></span> <span>向下滑动：滑行</span></div>
+        </div>
+        
+        <button id="startButton">开始冒险 <i class="fas fa-play-circle"></i></button>
+    </div>
+    
+    <div id="mobileControls">
+        <div id="mobileLeft" class="mobileBtn"><i class="fas fa-arrow-left"></i></div>
+        <div id="mobileJump" class="mobileBtn"><i class="fas fa-arrow-up"></i></div>
+        <div id="mobileSlide" class="mobileBtn"><i class="fas fa-arrow-down"></i></div>
+        <div id="mobileRight" class="mobileBtn"><i class="fas fa-arrow-right"></i></div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/game.js"></script>
+    
+    <script>
+    // 游戏提示信息
+    window.addEventListener('DOMContentLoaded', function() {
+        // 创建游戏提示元素
+        const gameTips = document.createElement('div');
+        gameTips.id = 'gameTips';
+        gameTips.innerHTML = `
+            <div class="tip-content">
+                <h3>游戏提示</h3>
+                <ul>
+                    <li>带有<span style="color:#00ff00">绿色标记</span>的障碍物可通过下蹲躲避</li>
+                    <li>高障碍物和浮动球体需要跳跃通过</li>
+                    <li>红色宽板需要从侧面绕过</li>
+                    <li>每次前进一定距离会提升难度</li>
+                    <li>注意观察多个车道，选择最佳路径</li>
+                </ul>
+                <button id="closeTips">了解了</button>
+            </div>
+        `;
+        
+        // 设置样式
+        gameTips.style.position = 'fixed';
+        gameTips.style.top = '0';
+        gameTips.style.left = '0';
+        gameTips.style.width = '100%';
+        gameTips.style.height = '100%';
+        gameTips.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        gameTips.style.zIndex = '2000';
+        gameTips.style.display = 'flex';
+        gameTips.style.justifyContent = 'center';
+        gameTips.style.alignItems = 'center';
+        gameTips.style.fontFamily = "'ZCOOL KuaiLe', cursive, Arial, sans-serif";
+        
+        // 设置内容样式
+        const tipContent = gameTips.querySelector('.tip-content');
+        tipContent.style.backgroundColor = 'rgba(255,255,255,0.1)';
+        tipContent.style.backdropFilter = 'blur(10px)';
+        tipContent.style.WebkitBackdropFilter = 'blur(10px)';
+        tipContent.style.padding = '30px';
+        tipContent.style.borderRadius = '15px';
+        tipContent.style.color = 'white';
+        tipContent.style.maxWidth = '500px';
+        tipContent.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+        tipContent.style.border = '1px solid rgba(255,255,255,0.1)';
+        
+        // 标题样式
+        const title = gameTips.querySelector('h3');
+        title.style.textAlign = 'center';
+        title.style.marginTop = '0';
+        title.style.fontSize = '24px';
+        title.style.marginBottom = '20px';
+        title.style.color = '#ff9500';
+        
+        // 列表样式
+        const ul = gameTips.querySelector('ul');
+        ul.style.paddingLeft = '20px';
+        ul.style.lineHeight = '1.6';
+        
+        // 按钮样式
+        const closeButton = gameTips.querySelector('#closeTips');
+        closeButton.style.display = 'block';
+        closeButton.style.margin = '20px auto 0';
+        closeButton.style.padding = '8px 20px';
+        closeButton.style.backgroundColor = '#ff5722';
+        closeButton.style.border = 'none';
+        closeButton.style.borderRadius = '30px';
+        closeButton.style.color = 'white';
+        closeButton.style.cursor = 'pointer';
+        closeButton.style.fontFamily = "'ZCOOL KuaiLe', cursive, Arial, sans-serif";
+        closeButton.style.fontSize = '18px';
+        closeButton.style.transition = 'all 0.3s';
+        
+        // 鼠标悬停效果
+        closeButton.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#ff9500';
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        closeButton.addEventListener('mouseout', function() {
+            this.style.backgroundColor = '#ff5722';
+            this.style.transform = 'scale(1)';
+        });
+        
+        // 关闭提示
+        closeButton.addEventListener('click', function() {
+            gameTips.style.opacity = '0';
+            gameTips.style.transition = 'opacity 0.5s';
+            
+            setTimeout(function() {
+                gameTips.remove();
+            }, 500);
+        });
+        
+        // 添加到文档
+        document.body.appendChild(gameTips);
+        
+        // 自动5秒后消失
+        setTimeout(function() {
+            if (document.getElementById('gameTips')) {
+                gameTips.style.opacity = '0';
+                gameTips.style.transition = 'opacity 0.5s';
+                
+                setTimeout(function() {
+                    if (document.getElementById('gameTips')) {
+                        gameTips.remove();
+                    }
+                }, 500);
+            }
+        }, 10000);
+    });
+    </script>
+</body>
+</html> 

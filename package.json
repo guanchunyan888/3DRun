@@ -1,0 +1,18 @@
+{
+  "name": "3d-parkour-game",
+  "version": "1.0.0",
+  "description": "一个基于Three.js的3D跑酷游戏",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "three.js",
+    "3d",
+    "game",
+    "parkour"
+  ],
+  "author": "",
+  "license": "MIT"
+} 
